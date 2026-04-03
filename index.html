@@ -1249,7 +1249,10 @@
                 dest = prov; name = '中通快递';
             }
 
-            total = total * discount / 10;
+            // 京东应用折扣，中通不打折
+            if (company === 'jd') {
+                total = total * discount / 10;
+            }
             total = Math.round(total * 100) / 100;
 
             document.getElementById('totalPrice').innerHTML = '¥' + total.toFixed(2) + '<small>元</small>';
@@ -1257,7 +1260,7 @@
             document.getElementById('rDest').textContent = dest;
             document.getElementById('rWeight').textContent = w.toFixed(2) + 'kg';
             document.getElementById('rBill').textContent = bill + 'kg';
-            document.getElementById('rDiscount').textContent = discountText;
+            document.getElementById('rDiscount').textContent = company === 'jd' ? discountText : '无折扣';
             showResult(true);
         }
 
