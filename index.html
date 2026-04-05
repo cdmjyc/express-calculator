@@ -705,7 +705,7 @@
         </div>
         <div class="card" id="card-sxjd" style="display:none;">
             <div class="card-title">📍 目的地（顺心捷达快运）</div>
-            <div class="city-select-wrap">
+            <div class="city-select-wrap active">
                 <select id="sxjdProv" onchange="calc()">
                     <option value="">-- 请选择目的地 --</option>
                     <option value="四川">四川</option>
@@ -1272,6 +1272,8 @@
             document.getElementById('card-zt').style.display = c==='zt'?'block':'none';
             document.getElementById('card-sxjd').style.display = c==='sxjd'?'block':'none';
             document.getElementById('discountCard').style.display = c==='jd'?'block':'none';
+            var sxjdWrap = document.querySelector('#card-sxjd .city-select-wrap');
+            if (sxjdWrap) sxjdWrap.classList.toggle('active', c==='sxjd');
             showResult(false);
         }
 
