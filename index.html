@@ -1234,24 +1234,24 @@
                 if (!ztData) { showResult(false); return; }
                 if (ztData.type === 'fixed') {
                     // 特殊地区：首重(含1kg) + 续重×不足1kg向上取整
-                    var extraKg = Math.ceil(weight) - 1;
+                    var extraKg = Math.ceil(w) - 1;
                     if (extraKg < 0) extraKg = 0;
                     total = ztData.first + extraKg * ztData.perKg;
                 } else {
                     // 普通地区：按重量段
-                    if (weight <= 5) {
+                    if (w <= 5) {
                         // tiers索引映射: ≤0.5→0, >0.5≤1→1, >1≤2→2, >2≤3→3, >3≤4→4, >4≤5→5
                         var idx;
-                        if (weight <= 0.5) idx = 0;
-                        else if (weight <= 1) idx = 1;
-                        else if (weight <= 2) idx = 2;
-                        else if (weight <= 3) idx = 3;
-                        else if (weight <= 4) idx = 4;
+                        if (w <= 0.5) idx = 0;
+                        else if (w <= 1) idx = 1;
+                        else if (w <= 2) idx = 2;
+                        else if (w <= 3) idx = 3;
+                        else if (w <= 4) idx = 4;
                         else idx = 5;
                         total = ztData.tiers[idx];
                     } else {
                         // 5kg以上: 首重(5kg首重列) + 超出部分向上取整×续重单价
-                        total = ztData.first5 + Math.ceil(weight - 5) * ztData.perKg5;
+                        total = ztData.first5 + Math.ceil(w - 5) * ztData.perKg5;
                     }
                 }
                 dest = prov; name = '中通快递';
