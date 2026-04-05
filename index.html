@@ -1250,8 +1250,8 @@
                         else idx = 5;
                         total = ztData.tiers[idx];
                     } else {
-                        // 5kg以上: 首重(5kg首重列) + 超出部分向上取整×续重单价
-                        total = ztData.first5 + Math.ceil(w - 5) * ztData.perKg5;
+                        // 5kg以上: 首重(5kg首重列) + ceil(实际重量-1)×续重单价
+                        total = ztData.first5 + Math.ceil(w - 1) * ztData.perKg5;
                     }
                 }
                 dest = prov; name = '中通快递';
