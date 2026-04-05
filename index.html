@@ -13,7 +13,7 @@
         .container { max-width: 480px; margin: 0 auto; padding: 15px 12px 30px; }
         .card { background: white; border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
         .card-title { font-size: 1rem; font-weight: 600; color: #0066cc; margin-bottom: 12px; }
-        .company-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .company-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .company-btn { padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; background: white; cursor: pointer; text-align: center; font-size: 0.9rem; font-weight: 600; color: #555; }
         .company-btn.active { border-color: #0066cc; background: #0066cc; color: white; }
 
@@ -51,13 +51,14 @@
             <div class="company-grid">
                 <div class="company-btn active" id="btn-jd" onclick="setCompany('jd')">🚛 京东快递</div>
                 <div class="company-btn" id="btn-zt" onclick="setCompany('zt')">🔵 中通快递</div>
+                <div class="company-btn" id="btn-sxjd" onclick="setCompany('sxjd')">🚚 顺心捷达快运</div>
             </div>
         </div>
         <div class="card">
             <div class="card-title">📏 重量（公斤）</div>
             <input type="number" id="weight" value="1" min="0" step="0.1">
         </div>
-        <div class="card">
+        <div class="card" id="discountCard">
             <div class="card-title">💰 折扣</div>
             <select id="discount" onchange="calc()">
                 <option value="10">原价</option>
@@ -702,6 +703,45 @@
                 </select>
             </div>
         </div>
+        <div class="card" id="card-sxjd" style="display:none;">
+            <div class="card-title">📍 目的地（顺心捷达快运）</div>
+            <div class="city-select-wrap">
+                <select id="sxjdProv" onchange="calc()">
+                    <option value="">-- 请选择目的地 --</option>
+                    <option value="四川">四川</option>
+                    <option value="甘孜阿坝凉山">甘孜、阿坝、凉山</option>
+                    <option value="重庆">重庆</option>
+                    <option value="河北">河北</option>
+                    <option value="山西">山西</option>
+                    <option value="上海">上海</option>
+                    <option value="江苏">江苏</option>
+                    <option value="浙江">浙江</option>
+                    <option value="安徽">安徽</option>
+                    <option value="江西">江西</option>
+                    <option value="天津">天津</option>
+                    <option value="山东">山东</option>
+                    <option value="河南">河南</option>
+                    <option value="湖北">湖北</option>
+                    <option value="湖南">湖南</option>
+                    <option value="广东">广东</option>
+                    <option value="贵州">贵州</option>
+                    <option value="陕西">陕西</option>
+                    <option value="福建">福建</option>
+                    <option value="广西">广西</option>
+                    <option value="云南">云南</option>
+                    <option value="北京">北京</option>
+                    <option value="甘肃">甘肃</option>
+                    <option value="辽宁">辽宁</option>
+                    <option value="吉林">吉林</option>
+                    <option value="黑龙江">黑龙江</option>
+                    <option value="内蒙古">内蒙古</option>
+                    <option value="青海">青海</option>
+                    <option value="宁夏">宁夏</option>
+                    <option value="西藏">西藏</option>
+                    <option value="新疆">新疆</option>
+                </select>
+            </div>
+        </div>
         <div class="result-card" id="resultCard">
             <div class="result-header">
                 <div class="label">预计运费</div>
@@ -718,7 +758,7 @@
         <button class="calc-btn" onclick="calc()">🚚 计算运费</button>
         <p class="note">⚠️ 运费仅供参考，实际费用以快递员称重为准</p>
     </div>
-    <footer><p>京东数据：成都始发京东运费表 · 中通数据：中通快递价格一览表</p></footer>
+    <footer><p>京东数据：成都始发京东运费表 · 中通数据：中通快递价格一览表 · 快运数据：顺心捷达快运价格表</p></footer>
     <script>
         const JD = {
   '上海': {
@@ -1187,14 +1227,51 @@
   '黑龙江省': { type: 'tiered', tiers: [2.45, 3.1, 4.4, 5.4, 8.2, 11.3], first5: 6.5, perKg5: 3.85 }
 };
 
+        const SXJD = {
+  '四川':        { min: 35, t1: 0.9, t2: 0.8, t3: 0.8, t4: 0.7 },
+  '甘孜阿坝凉山': { min: 35, t1: 1.5, t2: 1.4, t3: 1.3, t4: 1.0 },
+  '重庆':        { min: 35, t1: 1.0, t2: 0.9, t3: 0.8, t4: 0.7 },
+  '河北':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '山西':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '上海':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '江苏':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '浙江':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '安徽':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '江西':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '天津':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '山东':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '河南':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '湖北':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '湖南':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '广东':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '贵州':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '陕西':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '福建':        { min: 40, t1: 1.5, t2: 1.4, t3: 1.3, t4: 0.9 },
+  '广西':        { min: 40, t1: 1.5, t2: 1.4, t3: 1.2, t4: 0.9 },
+  '云南':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '北京':        { min: 45, t1: 1.7, t2: 1.6, t3: 1.5, t4: 1.4 },
+  '甘肃':        { min: 45, t1: 1.8, t2: 1.6, t3: 1.5, t4: 1.4 },
+  '辽宁':        { min: 45, t1: 2.3, t2: 2.2, t3: 2.0, t4: 1.8 },
+  '吉林':        { min: 45, t1: 2.3, t2: 2.2, t3: 2.0, t4: 1.8 },
+  '黑龙江':      { min: 45, t1: 2.5, t2: 2.4, t3: 2.2, t4: 2.0 },
+  '内蒙古':      { min: 55, t1: 2.5, t2: 2.4, t3: 2.3, t4: 2.1 },
+  '青海':        { min: 55, t1: 2.8, t2: 2.7, t3: 2.6, t4: 2.4 },
+  '宁夏':        { min: 65, t1: 2.6, t2: 2.4, t3: 2.2, t4: 2.0 },
+  '西藏':        { min: 65, t1: 4.0, t2: 3.5, t3: 3.0, t4: 2.8 },
+  '新疆':        { min: 65, t1: 4.0, t2: 3.5, t3: 3.0, t4: 2.8 }
+};
+
         var company = 'jd';
 
         function setCompany(c) {
             company = c;
             document.getElementById('btn-jd').className = 'company-btn' + (c==='jd'?' active':'');
             document.getElementById('btn-zt').className = 'company-btn' + (c==='zt'?' active':'');
+            document.getElementById('btn-sxjd').className = 'company-btn' + (c==='sxjd'?' active':'');
             document.getElementById('card-jd').style.display = c==='jd'?'block':'none';
             document.getElementById('card-zt').style.display = c==='zt'?'block':'none';
+            document.getElementById('card-sxjd').style.display = c==='sxjd'?'block':'none';
+            document.getElementById('discountCard').style.display = c==='jd'?'block':'none';
             showResult(false);
         }
 
@@ -1227,7 +1304,7 @@
                 total = price.first;
                 if (bill > 1) total += (bill - 1) * price.perKg;
                 dest = prov + ' ' + city; name = '京东快递';
-            } else {
+            } else if (company === 'zt') {
                 var prov = document.getElementById('ztProv').value;
                 if (!prov) { showResult(false); return; }
                 var ztData = ZT[prov];
@@ -1255,6 +1332,20 @@
                     }
                 }
                 dest = prov; name = '中通快递';
+            } else {
+                // 顺心捷达快运
+                var prov = document.getElementById('sxjdProv').value;
+                if (!prov) { showResult(false); return; }
+                var sxjdData = SXJD[prov];
+                if (!sxjdData) { showResult(false); return; }
+                // 按重量段选择单价
+                var perKg;
+                if (w <= 200) perKg = sxjdData.t1;
+                else if (w <= 500) perKg = sxjdData.t2;
+                else if (w <= 1000) perKg = sxjdData.t3;
+                else perKg = sxjdData.t4;
+                total = Math.max(sxjdData.min, w * perKg);
+                dest = prov; name = '顺心捷达快运';
             }
 
             // 京东应用折扣，中通不打折
