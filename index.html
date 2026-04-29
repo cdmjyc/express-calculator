@@ -1,0 +1,1456 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>成都美佳云仓物流费用计算器</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f0f2f5; min-height: 100vh; color: #333; }
+        header { background: linear-gradient(135deg, #0066cc, #0099ff); color: white; padding: 20px; text-align: center; }
+        header h1 { font-size: 1.4rem; font-weight: 600; margin-bottom: 4px; }
+        header p { font-size: 0.85rem; opacity: 0.9; }
+        .container { max-width: 480px; margin: 0 auto; padding: 15px 12px 30px; }
+        .card { background: white; border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+        .card-title { font-size: 1rem; font-weight: 600; color: #0066cc; margin-bottom: 12px; }
+        .company-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .company-btn { padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; background: white; cursor: pointer; text-align: center; font-size: 0.9rem; font-weight: 600; color: #555; }
+        .company-btn.active { border-color: #0066cc; background: #0066cc; color: white; }
+
+        select { width: 100%; padding: 12px 14px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 1rem; background: white; cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }
+        select:focus { border-color: #0066cc; outline: none; }
+        .form-group { margin-bottom: 10px; }
+        label { display: block; font-size: 0.85rem; color: #888; margin-bottom: 6px; }
+        input[type="number"] { width: 100%; padding: 12px 14px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 1rem; outline: none; box-sizing: border-box; }
+        input:focus { border-color: #0066cc; }
+        .city-select-wrap { display: none; }
+        .city-select-wrap.active { display: block; }
+        .city-select-wrap label { margin-top: 10px; }
+        .result-card { background: linear-gradient(135deg, #0a1628, #1a365d); border-radius: 14px; padding: 20px 16px; color: white; display: none; }
+        .result-card.show { display: block; }
+        .result-header { text-align: center; margin-bottom: 16px; }
+        .result-header .label { font-size: 0.85rem; opacity: 0.8; }
+        .result-header .price { font-size: 2.2rem; font-weight: 700; color: #4ade80; }
+        .result-details { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .result-item { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; }
+        .result-item .label { font-size: 0.75rem; opacity: 0.7; margin-bottom: 3px; }
+        .result-item .value { font-size: 0.95rem; font-weight: 600; }
+        .calc-detail { background: rgba(255,255,255,0.08); border-radius: 10px; padding: 12px 14px; margin-top: 12px; font-size: 0.82rem; line-height: 1.7; }
+        .calc-detail .calc-title { color: #93c5fd; font-weight: 600; margin-bottom: 4px; }
+        .calc-detail .calc-formula { color: #e0e7ff; font-family: 'Courier New', monospace; }
+        .calc-detail .calc-note { color: #9ca3af; font-size: 0.76rem; margin-top: 6px; }
+        .calc-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #0066cc, #0099ff); color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 12px; }
+        .note { font-size: 0.75rem; color: #aaa; text-align: center; margin-top: 12px; }
+        footer { text-align: center; padding: 15px; font-size: 0.75rem; color: #bbb; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>📦 成都美佳云仓物流费用计算器</h1>
+        <p>始发地：成都</p>
+    </header>
+    <div class="container">
+        <div class="card">
+            <div class="card-title">🚚 快递公司</div>
+            <div class="company-grid">
+                <div class="company-btn active" id="btn-jd" onclick="setCompany('jd')">🚛 京东快递</div>
+                <div class="company-btn" id="btn-zt" onclick="setCompany('zt')">🔵 中通快递</div>
+                <div class="company-btn" id="btn-sxjd" onclick="setCompany('sxjd')">🚚 顺心捷达快运</div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title">📏 重量（公斤）</div>
+            <input type="number" id="weight" value="1" min="0" step="0.1">
+        </div>
+        <div class="card" id="discountCard">
+            <div class="card-title">💰 折扣</div>
+            <select id="discount" onchange="calc()">
+                <option value="10">原价</option>
+                <option value="3.5">3.5折</option>
+                <option value="3.3">3.3折</option>
+                <option value="3.1">3.1折</option>
+            </select>
+        </div>
+        <div class="card" id="card-jd">
+            <div class="card-title">📍 目的地（京东城市级精准计费）</div>
+            <div class="form-group">
+                <label>省份</label>
+                <select id="jdProv" onchange="onJdProvChange()">
+<option value="">请选择省份</option>
+<option value="上海">上海</option>
+<option value="云南">云南</option>
+<option value="内蒙">内蒙</option>
+<option value="北京">北京</option>
+<option value="吉林">吉林</option>
+<option value="四川">四川</option>
+<option value="天津">天津</option>
+<option value="宁夏">宁夏</option>
+<option value="安徽">安徽</option>
+<option value="山东">山东</option>
+<option value="山西">山西</option>
+<option value="广东">广东</option>
+<option value="广西">广西</option>
+<option value="新疆">新疆</option>
+<option value="江苏">江苏</option>
+<option value="江西">江西</option>
+<option value="河北">河北</option>
+<option value="河南">河南</option>
+<option value="浙江">浙江</option>
+<option value="海南">海南</option>
+<option value="湖北">湖北</option>
+<option value="湖南">湖南</option>
+<option value="甘肃">甘肃</option>
+<option value="福建">福建</option>
+<option value="西藏">西藏</option>
+<option value="贵州">贵州</option>
+<option value="辽宁">辽宁</option>
+<option value="重庆">重庆</option>
+<option value="陕西">陕西</option>
+<option value="青海">青海</option>
+<option value="黑龙江">黑龙江</option>
+                </select>
+            </div>
+            <div id="cityContainers">
+<div class="city-select-wrap" id="cityWrap-上海">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-上海" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="上海">上海</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-云南">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-云南" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="临沧">临沧</option>
+<option value="丽江">丽江</option>
+<option value="保山">保山</option>
+<option value="大理白族自治州">大理白族自治州</option>
+<option value="德宏傣族景颇族自治州">德宏傣族景颇族自治州</option>
+<option value="怒江傈僳族自治州">怒江傈僳族自治州</option>
+<option value="文山壮族苗族自治州">文山壮族苗族自治州</option>
+<option value="昆明">昆明</option>
+<option value="昭通">昭通</option>
+<option value="普洱">普洱</option>
+<option value="曲靖">曲靖</option>
+<option value="楚雄彝族自治州">楚雄彝族自治州</option>
+<option value="玉溪">玉溪</option>
+<option value="红河哈尼族彝族自治州">红河哈尼族彝族自治州</option>
+<option value="西双版纳傣族自治州">西双版纳傣族自治州</option>
+<option value="迪庆藏族自治州">迪庆藏族自治州</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-内蒙">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-内蒙" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="乌兰察布">乌兰察布</option>
+<option value="乌海">乌海</option>
+<option value="兴安盟">兴安盟</option>
+<option value="包头">包头</option>
+<option value="呼伦贝尔">呼伦贝尔</option>
+<option value="呼和浩特">呼和浩特</option>
+<option value="巴彦淖尔">巴彦淖尔</option>
+<option value="赤峰">赤峰</option>
+<option value="通辽">通辽</option>
+<option value="鄂尔多斯">鄂尔多斯</option>
+<option value="锡林郭勒盟">锡林郭勒盟</option>
+<option value="阿拉善盟">阿拉善盟</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-北京">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-北京" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="北京">北京</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-吉林">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-吉林" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="吉林">吉林</option>
+<option value="四平">四平</option>
+<option value="延边朝鲜族自治州">延边朝鲜族自治州</option>
+<option value="松原">松原</option>
+<option value="白城">白城</option>
+<option value="白山">白山</option>
+<option value="辽源">辽源</option>
+<option value="通化">通化</option>
+<option value="长春">长春</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-四川">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-四川" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="乐山">乐山</option>
+<option value="内江">内江</option>
+<option value="凉山彝族自治州">凉山彝族自治州</option>
+<option value="南充">南充</option>
+<option value="宜宾">宜宾</option>
+<option value="巴中">巴中</option>
+<option value="广元">广元</option>
+<option value="广安">广安</option>
+<option value="德阳">德阳</option>
+<option value="成都市">成都市</option>
+<option value="攀枝花">攀枝花</option>
+<option value="泸州">泸州</option>
+<option value="甘孜藏族自治州">甘孜藏族自治州</option>
+<option value="眉山">眉山</option>
+<option value="绵阳">绵阳</option>
+<option value="自贡">自贡</option>
+<option value="资阳">资阳</option>
+<option value="达州">达州</option>
+<option value="遂宁">遂宁</option>
+<option value="阿坝藏族羌族自治州">阿坝藏族羌族自治州</option>
+<option value="雅安">雅安</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-天津">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-天津" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="天津">天津</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-宁夏">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-宁夏" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="中卫">中卫</option>
+<option value="吴忠">吴忠</option>
+<option value="固原">固原</option>
+<option value="石嘴山">石嘴山</option>
+<option value="银川">银川</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-安徽">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-安徽" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="亳州">亳州</option>
+<option value="六安">六安</option>
+<option value="合肥">合肥</option>
+<option value="安庆">安庆</option>
+<option value="宣城">宣城</option>
+<option value="宿州">宿州</option>
+<option value="池州">池州</option>
+<option value="淮北">淮北</option>
+<option value="淮南">淮南</option>
+<option value="滁州">滁州</option>
+<option value="芜湖">芜湖</option>
+<option value="蚌埠">蚌埠</option>
+<option value="铜陵">铜陵</option>
+<option value="阜阳">阜阳</option>
+<option value="马鞍山">马鞍山</option>
+<option value="黄山">黄山</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-山东">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-山东" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="东营">东营</option>
+<option value="临沂">临沂</option>
+<option value="威海">威海</option>
+<option value="德州">德州</option>
+<option value="日照">日照</option>
+<option value="枣庄">枣庄</option>
+<option value="泰安">泰安</option>
+<option value="济南">济南</option>
+<option value="济宁">济宁</option>
+<option value="淄博">淄博</option>
+<option value="滨州">滨州</option>
+<option value="潍坊">潍坊</option>
+<option value="烟台">烟台</option>
+<option value="聊城">聊城</option>
+<option value="菏泽">菏泽</option>
+<option value="青岛">青岛</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-山西">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-山西" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="临汾">临汾</option>
+<option value="吕梁">吕梁</option>
+<option value="大同">大同</option>
+<option value="太原">太原</option>
+<option value="忻州">忻州</option>
+<option value="晋中">晋中</option>
+<option value="晋城">晋城</option>
+<option value="朔州">朔州</option>
+<option value="运城">运城</option>
+<option value="长治">长治</option>
+<option value="阳泉">阳泉</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-广东">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-广东" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="东莞">东莞</option>
+<option value="中山">中山</option>
+<option value="云浮">云浮</option>
+<option value="佛山">佛山</option>
+<option value="广州">广州</option>
+<option value="惠州">惠州</option>
+<option value="揭阳">揭阳</option>
+<option value="梅州">梅州</option>
+<option value="汕头">汕头</option>
+<option value="汕尾">汕尾</option>
+<option value="江门">江门</option>
+<option value="河源">河源</option>
+<option value="深圳">深圳</option>
+<option value="清远">清远</option>
+<option value="湛江">湛江</option>
+<option value="潮州">潮州</option>
+<option value="珠海">珠海</option>
+<option value="肇庆">肇庆</option>
+<option value="茂名">茂名</option>
+<option value="阳江">阳江</option>
+<option value="韶关">韶关</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-广西">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-广西" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="北海">北海</option>
+<option value="南宁">南宁</option>
+<option value="崇左">崇左</option>
+<option value="来宾">来宾</option>
+<option value="柳州">柳州</option>
+<option value="桂林">桂林</option>
+<option value="梧州">梧州</option>
+<option value="河池">河池</option>
+<option value="玉林">玉林</option>
+<option value="百色">百色</option>
+<option value="贵港">贵港</option>
+<option value="贺州">贺州</option>
+<option value="钦州">钦州</option>
+<option value="防城港">防城港</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-新疆">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-新疆" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="乌鲁木齐">乌鲁木齐</option>
+<option value="五家渠">五家渠</option>
+<option value="伊犁哈萨克自治州">伊犁哈萨克自治州</option>
+<option value="克孜勒苏柯尔克孜自治州">克孜勒苏柯尔克孜自治州</option>
+<option value="克拉玛依">克拉玛依</option>
+<option value="北屯">北屯</option>
+<option value="博尔塔拉蒙古自治州">博尔塔拉蒙古自治州</option>
+<option value="可克达拉">可克达拉</option>
+<option value="吐鲁番市">吐鲁番市</option>
+<option value="和田地区">和田地区</option>
+<option value="哈密市">哈密市</option>
+<option value="喀什地区">喀什地区</option>
+<option value="图木舒克">图木舒克</option>
+<option value="塔城地区">塔城地区</option>
+<option value="巴音郭楞蒙古自治州">巴音郭楞蒙古自治州</option>
+<option value="昆玉">昆玉</option>
+<option value="昌吉回族自治州">昌吉回族自治州</option>
+<option value="石河子">石河子</option>
+<option value="胡杨河">胡杨河</option>
+<option value="铁门关">铁门关</option>
+<option value="阿克苏地区">阿克苏地区</option>
+<option value="阿勒泰地区">阿勒泰地区</option>
+<option value="阿拉尔">阿拉尔</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-江苏">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-江苏" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="南京">南京</option>
+<option value="南通">南通</option>
+<option value="宿迁">宿迁</option>
+<option value="常州">常州</option>
+<option value="徐州">徐州</option>
+<option value="扬州">扬州</option>
+<option value="无锡">无锡</option>
+<option value="泰州">泰州</option>
+<option value="淮安">淮安</option>
+<option value="盐城">盐城</option>
+<option value="苏州">苏州</option>
+<option value="连云港">连云港</option>
+<option value="镇江">镇江</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-江西">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-江西" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="上饶">上饶</option>
+<option value="九江">九江</option>
+<option value="南昌">南昌</option>
+<option value="吉安">吉安</option>
+<option value="宜春">宜春</option>
+<option value="抚州">抚州</option>
+<option value="新余">新余</option>
+<option value="景德镇">景德镇</option>
+<option value="萍乡">萍乡</option>
+<option value="赣州">赣州</option>
+<option value="鹰潭">鹰潭</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-河北">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-河北" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="保定">保定</option>
+<option value="唐山">唐山</option>
+<option value="廊坊">廊坊</option>
+<option value="张家口">张家口</option>
+<option value="承德">承德</option>
+<option value="沧州">沧州</option>
+<option value="石家庄">石家庄</option>
+<option value="秦皇岛">秦皇岛</option>
+<option value="衡水">衡水</option>
+<option value="邢台">邢台</option>
+<option value="邯郸">邯郸</option>
+<option value="雄安">雄安</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-河南">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-河南" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="三门峡">三门峡</option>
+<option value="信阳">信阳</option>
+<option value="南阳">南阳</option>
+<option value="周口">周口</option>
+<option value="商丘">商丘</option>
+<option value="安阳">安阳</option>
+<option value="平顶山">平顶山</option>
+<option value="开封">开封</option>
+<option value="新乡">新乡</option>
+<option value="洛阳">洛阳</option>
+<option value="济源">济源</option>
+<option value="漯河">漯河</option>
+<option value="濮阳">濮阳</option>
+<option value="焦作">焦作</option>
+<option value="许昌">许昌</option>
+<option value="郑州">郑州</option>
+<option value="驻马店">驻马店</option>
+<option value="鹤壁">鹤壁</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-浙江">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-浙江" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="丽水">丽水</option>
+<option value="台州">台州</option>
+<option value="嘉兴">嘉兴</option>
+<option value="宁波">宁波</option>
+<option value="杭州">杭州</option>
+<option value="温州">温州</option>
+<option value="湖州">湖州</option>
+<option value="绍兴">绍兴</option>
+<option value="舟山">舟山</option>
+<option value="衢州">衢州</option>
+<option value="金华">金华</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-海南">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-海南" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="万宁">万宁</option>
+<option value="三亚">三亚</option>
+<option value="三沙">三沙</option>
+<option value="东方">东方</option>
+<option value="临高县">临高县</option>
+<option value="乐东黎族自治县">乐东黎族自治县</option>
+<option value="五指山">五指山</option>
+<option value="保亭黎族苗族自治县">保亭黎族苗族自治县</option>
+<option value="儋州">儋州</option>
+<option value="定安县">定安县</option>
+<option value="屯昌县">屯昌县</option>
+<option value="文昌">文昌</option>
+<option value="昌江黎族自治县">昌江黎族自治县</option>
+<option value="海口">海口</option>
+<option value="澄迈县">澄迈县</option>
+<option value="琼中黎族苗族自治县">琼中黎族苗族自治县</option>
+<option value="琼海">琼海</option>
+<option value="白沙黎族自治县">白沙黎族自治县</option>
+<option value="陵水黎族自治县">陵水黎族自治县</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-湖北">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-湖北" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="仙桃">仙桃</option>
+<option value="十堰">十堰</option>
+<option value="咸宁">咸宁</option>
+<option value="天门">天门</option>
+<option value="孝感">孝感</option>
+<option value="宜昌">宜昌</option>
+<option value="恩施土家族苗族自治州">恩施土家族苗族自治州</option>
+<option value="武汉">武汉</option>
+<option value="潜江">潜江</option>
+<option value="神农架林区">神农架林区</option>
+<option value="荆州">荆州</option>
+<option value="荆门">荆门</option>
+<option value="襄阳">襄阳</option>
+<option value="鄂州">鄂州</option>
+<option value="随州">随州</option>
+<option value="黄冈">黄冈</option>
+<option value="黄石">黄石</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-湖南">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-湖南" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="娄底">娄底</option>
+<option value="岳阳">岳阳</option>
+<option value="常德">常德</option>
+<option value="张家界">张家界</option>
+<option value="怀化">怀化</option>
+<option value="株洲">株洲</option>
+<option value="永州">永州</option>
+<option value="湘潭">湘潭</option>
+<option value="湘西土家族苗族自治州">湘西土家族苗族自治州</option>
+<option value="益阳">益阳</option>
+<option value="衡阳">衡阳</option>
+<option value="邵阳">邵阳</option>
+<option value="郴州">郴州</option>
+<option value="长沙">长沙</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-甘肃">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-甘肃" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="临夏回族自治州">临夏回族自治州</option>
+<option value="兰州">兰州</option>
+<option value="嘉峪关">嘉峪关</option>
+<option value="天水">天水</option>
+<option value="定西">定西</option>
+<option value="平凉">平凉</option>
+<option value="庆阳">庆阳</option>
+<option value="张掖">张掖</option>
+<option value="武威">武威</option>
+<option value="甘南藏族自治州">甘南藏族自治州</option>
+<option value="白银">白银</option>
+<option value="酒泉">酒泉</option>
+<option value="金昌">金昌</option>
+<option value="陇南">陇南</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-福建">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-福建" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="三明">三明</option>
+<option value="南平">南平</option>
+<option value="厦门">厦门</option>
+<option value="宁德">宁德</option>
+<option value="泉州">泉州</option>
+<option value="漳州">漳州</option>
+<option value="福州">福州</option>
+<option value="莆田">莆田</option>
+<option value="龙岩">龙岩</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-西藏">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-西藏" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="山南市">山南市</option>
+<option value="拉萨">拉萨</option>
+<option value="日喀则市">日喀则市</option>
+<option value="昌都市">昌都市</option>
+<option value="林芝">林芝</option>
+<option value="那曲市">那曲市</option>
+<option value="阿里地区">阿里地区</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-贵州">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-贵州" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="六盘水">六盘水</option>
+<option value="安顺">安顺</option>
+<option value="毕节">毕节</option>
+<option value="贵阳">贵阳</option>
+<option value="遵义">遵义</option>
+<option value="铜仁">铜仁</option>
+<option value="黔东南苗族侗族自治州">黔东南苗族侗族自治州</option>
+<option value="黔南布依族苗族自治州">黔南布依族苗族自治州</option>
+<option value="黔西南布依族苗族自治州">黔西南布依族苗族自治州</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-辽宁">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-辽宁" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="丹东">丹东</option>
+<option value="大连">大连</option>
+<option value="抚顺">抚顺</option>
+<option value="朝阳">朝阳</option>
+<option value="本溪">本溪</option>
+<option value="沈阳">沈阳</option>
+<option value="盘锦">盘锦</option>
+<option value="营口">营口</option>
+<option value="葫芦岛">葫芦岛</option>
+<option value="辽阳">辽阳</option>
+<option value="铁岭">铁岭</option>
+<option value="锦州">锦州</option>
+<option value="阜新">阜新</option>
+<option value="鞍山">鞍山</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-重庆">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-重庆" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="重庆">重庆</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-陕西">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-陕西" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="咸阳">咸阳</option>
+<option value="商洛">商洛</option>
+<option value="安康">安康</option>
+<option value="宝鸡">宝鸡</option>
+<option value="延安">延安</option>
+<option value="榆林">榆林</option>
+<option value="汉中">汉中</option>
+<option value="渭南">渭南</option>
+<option value="西安">西安</option>
+<option value="铜川">铜川</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-青海">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-青海" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="果洛藏族自治州">果洛藏族自治州</option>
+<option value="海东市">海东市</option>
+<option value="海北藏族自治州">海北藏族自治州</option>
+<option value="海南藏族自治州">海南藏族自治州</option>
+<option value="海西蒙古族藏族自治州">海西蒙古族藏族自治州</option>
+<option value="玉树藏族自治州">玉树藏族自治州</option>
+<option value="西宁">西宁</option>
+<option value="黄南藏族自治州">黄南藏族自治州</option>
+            </select>
+        </div>
+<div class="city-select-wrap" id="cityWrap-黑龙江">
+            <label style="font-size:0.85rem;color:#888;margin-bottom:6px;display:block;">城市</label>
+            <select id="jdCity-黑龙江" onchange="calc()">
+<option value="">请选择城市</option>
+<option value="七台河">七台河</option>
+<option value="伊春">伊春</option>
+<option value="佳木斯">佳木斯</option>
+<option value="双鸭山">双鸭山</option>
+<option value="哈尔滨">哈尔滨</option>
+<option value="大兴安岭地区">大兴安岭地区</option>
+<option value="大庆">大庆</option>
+<option value="牡丹江">牡丹江</option>
+<option value="绥化">绥化</option>
+<option value="鸡西">鸡西</option>
+<option value="鹤岗">鹤岗</option>
+<option value="黑河">黑河</option>
+<option value="齐齐哈尔">齐齐哈尔</option>
+            </select>
+        </div>
+            </div>
+        </div>
+        <div class="card" id="card-zt" style="display:none;">
+            <div class="card-title">📍 目的地（中通精准计费）</div>
+            <div class="form-group">
+                <label>省份</label>
+                <select id="ztProv" onchange="calc()">
+<option value="">请选择省份</option>
+<option value="上海">上海</option>
+<option value="云南省">云南</option>
+<option value="内蒙古">内蒙古</option>
+<option value="北京">北京</option>
+<option value="吉林省">吉林</option>
+<option value="四川省">四川</option>
+<option value="天津">天津</option>
+<option value="宁夏回族自治区">宁夏</option>
+<option value="安徽省">安徽</option>
+<option value="山东省">山东</option>
+<option value="山西省">山西</option>
+<option value="广东省">广东</option>
+<option value="广西壮族自治区">广西</option>
+<option value="新疆">新疆</option>
+<option value="江苏省">江苏</option>
+<option value="江西省">江西</option>
+<option value="河北省">河北</option>
+<option value="河南省">河南</option>
+<option value="浙江省">浙江</option>
+<option value="海南">海南</option>
+<option value="湖北省">湖北</option>
+<option value="湖南省">湖南</option>
+<option value="甘孜阿坝">甘孜阿坝</option>
+<option value="甘肃省">甘肃</option>
+<option value="福建省">福建</option>
+<option value="西藏">西藏</option>
+<option value="贵州省">贵州</option>
+<option value="辽宁省">辽宁</option>
+<option value="重庆">重庆</option>
+<option value="陕西省">陕西</option>
+<option value="青海省">青海</option>
+<option value="黑龙江省">黑龙江</option>
+                </select>
+            </div>
+        </div>
+        <div class="card" id="card-sxjd" style="display:none;">
+            <div class="card-title">📍 目的地（顺心捷达快运）</div>
+            <div class="city-select-wrap active">
+                <select id="sxjdProv" onchange="calc()">
+                    <option value="">-- 请选择目的地 --</option>
+                    <option value="四川">四川</option>
+                    <option value="甘孜阿坝凉山">甘孜、阿坝、凉山</option>
+                    <option value="重庆">重庆</option>
+                    <option value="河北">河北</option>
+                    <option value="山西">山西</option>
+                    <option value="上海">上海</option>
+                    <option value="江苏">江苏</option>
+                    <option value="浙江">浙江</option>
+                    <option value="安徽">安徽</option>
+                    <option value="江西">江西</option>
+                    <option value="天津">天津</option>
+                    <option value="山东">山东</option>
+                    <option value="河南">河南</option>
+                    <option value="湖北">湖北</option>
+                    <option value="湖南">湖南</option>
+                    <option value="广东">广东</option>
+                    <option value="贵州">贵州</option>
+                    <option value="陕西">陕西</option>
+                    <option value="福建">福建</option>
+                    <option value="广西">广西</option>
+                    <option value="云南">云南</option>
+                    <option value="北京">北京</option>
+                    <option value="甘肃">甘肃</option>
+                    <option value="辽宁">辽宁</option>
+                    <option value="吉林">吉林</option>
+                    <option value="黑龙江">黑龙江</option>
+                    <option value="内蒙古">内蒙古</option>
+                    <option value="青海">青海</option>
+                    <option value="宁夏">宁夏</option>
+                    <option value="西藏">西藏</option>
+                    <option value="新疆">新疆</option>
+                </select>
+            </div>
+        </div>
+        <div class="result-card" id="resultCard">
+            <div class="result-header">
+                <div class="label">预计运费</div>
+                <div class="price" id="totalPrice">¥0.00<small>元</small></div>
+            </div>
+            <div class="result-details">
+                <div class="result-item"><div class="label">快递公司</div><div class="value" id="rCompany">-</div></div>
+                <div class="result-item"><div class="label">目的地</div><div class="value" id="rDest">-</div></div>
+                <div class="result-item"><div class="label">实际重量</div><div class="value" id="rWeight">-</div></div>
+                <div class="result-item"><div class="label">计费重量</div><div class="value" id="rBill">-</div></div>
+                <div class="result-item"><div class="label">折扣</div><div class="value" id="rDiscount">-</div></div>
+            </div>
+            <div id="calcDetail" class="calc-detail" style="display:none;">
+                <div class="calc-title">📐 计算过程</div>
+                <div class="calc-formula" id="calcFormula"></div>
+                <div class="calc-note" id="calcNote"></div>
+            </div>
+        </div>
+        <button class="calc-btn" onclick="calc()">🚚 计算运费</button>
+        <p class="note">⚠️ 运费仅供参考，实际费用以快递员称重为准</p>
+    </div>
+    <footer><p>京东数据：成都始发京东运费表 · 中通数据：中通快递价格一览表 · 快运数据：顺心捷达快运价格表</p></footer>
+    <script>
+        const JD = {
+  '上海': {
+    '上海': { first: 16, perKg: 6 },
+  },
+  '云南': {
+    '临沧': { first: 16, perKg: 6 },
+    '丽江': { first: 15, perKg: 5 },
+    '保山': { first: 16, perKg: 6 },
+    '大理白族自治州': { first: 16, perKg: 6 },
+    '德宏傣族景颇族自治州': { first: 16, perKg: 6 },
+    '怒江傈僳族自治州': { first: 16, perKg: 6 },
+    '文山壮族苗族自治州': { first: 16, perKg: 6 },
+    '昆明': { first: 15, perKg: 5 },
+    '昭通': { first: 15, perKg: 5 },
+    '普洱': { first: 16, perKg: 6 },
+    '曲靖': { first: 15, perKg: 5 },
+    '楚雄彝族自治州': { first: 15, perKg: 5 },
+    '玉溪': { first: 15, perKg: 5 },
+    '红河哈尼族彝族自治州': { first: 16, perKg: 6 },
+    '西双版纳傣族自治州': { first: 16, perKg: 6 },
+    '迪庆藏族自治州': { first: 15, perKg: 5 },
+  },
+  '内蒙': {
+    '乌兰察布': { first: 17, perKg: 6 },
+    '乌海': { first: 17, perKg: 6 },
+    '兴安盟': { first: 17, perKg: 6 },
+    '包头': { first: 17, perKg: 6 },
+    '呼伦贝尔': { first: 18, perKg: 8 },
+    '呼和浩特': { first: 17, perKg: 6 },
+    '巴彦淖尔': { first: 17, perKg: 6 },
+    '赤峰': { first: 17, perKg: 6 },
+    '通辽': { first: 17, perKg: 6 },
+    '鄂尔多斯': { first: 17, perKg: 6 },
+    '锡林郭勒盟': { first: 17, perKg: 6 },
+    '阿拉善盟': { first: 17, perKg: 6 },
+  },
+  '北京': {
+    '北京': { first: 16, perKg: 6 },
+  },
+  '吉林': {
+    '吉林': { first: 17, perKg: 6 },
+    '四平': { first: 17, perKg: 6 },
+    '延边朝鲜族自治州': { first: 17, perKg: 6 },
+    '松原': { first: 17, perKg: 6 },
+    '白城': { first: 17, perKg: 6 },
+    '白山': { first: 17, perKg: 6 },
+    '辽源': { first: 17, perKg: 6 },
+    '通化': { first: 17, perKg: 6 },
+    '长春': { first: 17, perKg: 6 },
+  },
+  '四川': {
+    '乐山': { first: 13, perKg: 2 },
+    '内江': { first: 13, perKg: 2 },
+    '凉山彝族自治州': { first: 13, perKg: 3 },
+    '南充': { first: 13, perKg: 2 },
+    '宜宾': { first: 13, perKg: 2 },
+    '巴中': { first: 13, perKg: 2 },
+    '广元': { first: 13, perKg: 2 },
+    '广安': { first: 13, perKg: 2 },
+    '德阳': { first: 13, perKg: 2 },
+    '成都市': { first: 11, perKg: 1 },
+    '攀枝花': { first: 13, perKg: 3 },
+    '泸州': { first: 13, perKg: 2 },
+    '甘孜藏族自治州': { first: 13, perKg: 3 },
+    '眉山': { first: 13, perKg: 2 },
+    '绵阳': { first: 13, perKg: 2 },
+    '自贡': { first: 13, perKg: 2 },
+    '资阳': { first: 13, perKg: 2 },
+    '达州': { first: 12, perKg: 2 },
+    '遂宁': { first: 13, perKg: 2 },
+    '阿坝藏族羌族自治州': { first: 13, perKg: 2 },
+    '雅安': { first: 13, perKg: 2 },
+  },
+  '天津': {
+    '天津': { first: 16, perKg: 6 },
+  },
+  '宁夏': {
+    '中卫': { first: 16, perKg: 6 },
+    '吴忠': { first: 16, perKg: 6 },
+    '固原': { first: 16, perKg: 6 },
+    '石嘴山': { first: 16, perKg: 6 },
+    '银川': { first: 16, perKg: 6 },
+  },
+  '安徽': {
+    '亳州': { first: 16, perKg: 6 },
+    '六安': { first: 16, perKg: 6 },
+    '合肥': { first: 16, perKg: 6 },
+    '安庆': { first: 16, perKg: 6 },
+    '宣城': { first: 16, perKg: 6 },
+    '宿州': { first: 16, perKg: 6 },
+    '池州': { first: 16, perKg: 6 },
+    '淮北': { first: 16, perKg: 6 },
+    '淮南': { first: 16, perKg: 6 },
+    '滁州': { first: 16, perKg: 6 },
+    '芜湖': { first: 16, perKg: 6 },
+    '蚌埠': { first: 16, perKg: 6 },
+    '铜陵': { first: 16, perKg: 6 },
+    '阜阳': { first: 16, perKg: 6 },
+    '马鞍山': { first: 16, perKg: 6 },
+    '黄山': { first: 16, perKg: 6 },
+  },
+  '山东': {
+    '东营': { first: 16, perKg: 6 },
+    '临沂': { first: 16, perKg: 6 },
+    '威海': { first: 17, perKg: 6 },
+    '德州': { first: 16, perKg: 6 },
+    '日照': { first: 16, perKg: 6 },
+    '枣庄': { first: 16, perKg: 6 },
+    '泰安': { first: 17, perKg: 6 },
+    '济南': { first: 16, perKg: 6 },
+    '济宁': { first: 16, perKg: 6 },
+    '淄博': { first: 16, perKg: 6 },
+    '滨州': { first: 16, perKg: 6 },
+    '潍坊': { first: 16, perKg: 6 },
+    '烟台': { first: 17, perKg: 6 },
+    '聊城': { first: 17, perKg: 6 },
+    '菏泽': { first: 16, perKg: 6 },
+    '青岛': { first: 16, perKg: 6 },
+  },
+  '山西': {
+    '临汾': { first: 16, perKg: 6 },
+    '吕梁': { first: 16, perKg: 6 },
+    '大同': { first: 16, perKg: 6 },
+    '太原': { first: 16, perKg: 6 },
+    '忻州': { first: 16, perKg: 6 },
+    '晋中': { first: 16, perKg: 6 },
+    '晋城': { first: 16, perKg: 6 },
+    '朔州': { first: 16, perKg: 6 },
+    '运城': { first: 15, perKg: 5 },
+    '长治': { first: 16, perKg: 6 },
+    '阳泉': { first: 16, perKg: 6 },
+  },
+  '广东': {
+    '东莞': { first: 16, perKg: 6 },
+    '中山': { first: 16, perKg: 6 },
+    '云浮': { first: 16, perKg: 6 },
+    '佛山': { first: 16, perKg: 6 },
+    '广州': { first: 16, perKg: 6 },
+    '惠州': { first: 16, perKg: 6 },
+    '揭阳': { first: 17, perKg: 6 },
+    '梅州': { first: 17, perKg: 6 },
+    '汕头': { first: 17, perKg: 6 },
+    '汕尾': { first: 17, perKg: 6 },
+    '江门': { first: 16, perKg: 6 },
+    '河源': { first: 16, perKg: 6 },
+    '深圳': { first: 16, perKg: 6 },
+    '清远': { first: 17, perKg: 6 },
+    '湛江': { first: 16, perKg: 6 },
+    '潮州': { first: 17, perKg: 6 },
+    '珠海': { first: 16, perKg: 6 },
+    '肇庆': { first: 17, perKg: 6 },
+    '茂名': { first: 16, perKg: 6 },
+    '阳江': { first: 16, perKg: 6 },
+    '韶关': { first: 16, perKg: 6 },
+  },
+  '广西': {
+    '北海': { first: 16, perKg: 6 },
+    '南宁': { first: 16, perKg: 6 },
+    '崇左': { first: 16, perKg: 6 },
+    '来宾': { first: 16, perKg: 6 },
+    '柳州': { first: 16, perKg: 6 },
+    '桂林': { first: 16, perKg: 6 },
+    '梧州': { first: 16, perKg: 6 },
+    '河池': { first: 16, perKg: 6 },
+    '玉林': { first: 16, perKg: 6 },
+    '百色': { first: 16, perKg: 6 },
+    '贵港': { first: 16, perKg: 6 },
+    '贺州': { first: 16, perKg: 6 },
+    '钦州': { first: 16, perKg: 6 },
+    '防城港': { first: 16, perKg: 6 },
+  },
+  '新疆': {
+    '乌鲁木齐': { first: 17, perKg: 8 },
+    '五家渠': { first: 17, perKg: 8 },
+    '伊犁哈萨克自治州': { first: 17, perKg: 8 },
+    '克孜勒苏柯尔克孜自治州': { first: 17, perKg: 8 },
+    '克拉玛依': { first: 17, perKg: 8 },
+    '北屯': { first: 17, perKg: 8 },
+    '博尔塔拉蒙古自治州': { first: 17, perKg: 8 },
+    '可克达拉': { first: 17, perKg: 8 },
+    '吐鲁番市': { first: 17, perKg: 8 },
+    '和田地区': { first: 17, perKg: 8 },
+    '哈密市': { first: 17, perKg: 8 },
+    '喀什地区': { first: 17, perKg: 8 },
+    '图木舒克': { first: 17, perKg: 8 },
+    '塔城地区': { first: 17, perKg: 8 },
+    '巴音郭楞蒙古自治州': { first: 17, perKg: 8 },
+    '昆玉': { first: 17, perKg: 8 },
+    '昌吉回族自治州': { first: 17, perKg: 8 },
+    '石河子': { first: 17, perKg: 8 },
+    '胡杨河': { first: 17, perKg: 8 },
+    '铁门关': { first: 17, perKg: 8 },
+    '阿克苏地区': { first: 17, perKg: 8 },
+    '阿勒泰地区': { first: 17, perKg: 8 },
+    '阿拉尔': { first: 17, perKg: 8 },
+  },
+  '江苏': {
+    '南京': { first: 16, perKg: 6 },
+    '南通': { first: 17, perKg: 6 },
+    '宿迁': { first: 17, perKg: 6 },
+    '常州': { first: 16, perKg: 6 },
+    '徐州': { first: 17, perKg: 6 },
+    '扬州': { first: 17, perKg: 6 },
+    '无锡': { first: 16, perKg: 6 },
+    '泰州': { first: 16, perKg: 6 },
+    '淮安': { first: 17, perKg: 6 },
+    '盐城': { first: 16, perKg: 6 },
+    '苏州': { first: 17, perKg: 6 },
+    '连云港': { first: 16, perKg: 6 },
+    '镇江': { first: 17, perKg: 6 },
+  },
+  '江西': {
+    '上饶': { first: 16, perKg: 6 },
+    '九江': { first: 16, perKg: 6 },
+    '南昌': { first: 16, perKg: 6 },
+    '吉安': { first: 16, perKg: 6 },
+    '宜春': { first: 16, perKg: 6 },
+    '抚州': { first: 16, perKg: 6 },
+    '新余': { first: 16, perKg: 6 },
+    '景德镇': { first: 16, perKg: 6 },
+    '萍乡': { first: 16, perKg: 6 },
+    '赣州': { first: 16, perKg: 6 },
+    '鹰潭': { first: 16, perKg: 6 },
+  },
+  '河北': {
+    '保定': { first: 17, perKg: 6 },
+    '唐山': { first: 16, perKg: 6 },
+    '廊坊': { first: 17, perKg: 6 },
+    '张家口': { first: 16, perKg: 6 },
+    '承德': { first: 17, perKg: 6 },
+    '沧州': { first: 16, perKg: 6 },
+    '石家庄': { first: 16, perKg: 6 },
+    '秦皇岛': { first: 17, perKg: 6 },
+    '衡水': { first: 16, perKg: 6 },
+    '邢台': { first: 16, perKg: 6 },
+    '邯郸': { first: 16, perKg: 6 },
+    '雄安': { first: 17, perKg: 6 },
+  },
+  '河南': {
+    '三门峡': { first: 15, perKg: 5 },
+    '信阳': { first: 16, perKg: 6 },
+    '南阳': { first: 16, perKg: 6 },
+    '周口': { first: 16, perKg: 6 },
+    '商丘': { first: 16, perKg: 6 },
+    '安阳': { first: 16, perKg: 6 },
+    '平顶山': { first: 16, perKg: 6 },
+    '开封': { first: 16, perKg: 6 },
+    '新乡': { first: 16, perKg: 6 },
+    '洛阳': { first: 16, perKg: 6 },
+    '济源': { first: 16, perKg: 6 },
+    '漯河': { first: 16, perKg: 6 },
+    '濮阳': { first: 16, perKg: 6 },
+    '焦作': { first: 16, perKg: 6 },
+    '许昌': { first: 16, perKg: 6 },
+    '郑州': { first: 16, perKg: 6 },
+    '驻马店': { first: 16, perKg: 6 },
+    '鹤壁': { first: 16, perKg: 6 },
+  },
+  '浙江': {
+    '丽水': { first: 16, perKg: 6 },
+    '台州': { first: 16, perKg: 6 },
+    '嘉兴': { first: 16, perKg: 6 },
+    '宁波': { first: 16, perKg: 6 },
+    '杭州': { first: 16, perKg: 6 },
+    '温州': { first: 16, perKg: 6 },
+    '湖州': { first: 16, perKg: 6 },
+    '绍兴': { first: 16, perKg: 6 },
+    '舟山': { first: 16, perKg: 6 },
+    '衢州': { first: 16, perKg: 6 },
+    '金华': { first: 16, perKg: 6 },
+  },
+  '海南': {
+    '万宁': { first: 16, perKg: 6 },
+    '三亚': { first: 16, perKg: 6 },
+    '三沙': { first: 28, perKg: 20 },
+    '东方': { first: 16, perKg: 6 },
+    '临高县': { first: 16, perKg: 6 },
+    '乐东黎族自治县': { first: 16, perKg: 6 },
+    '五指山': { first: 16, perKg: 6 },
+    '保亭黎族苗族自治县': { first: 16, perKg: 6 },
+    '儋州': { first: 16, perKg: 6 },
+    '定安县': { first: 16, perKg: 6 },
+    '屯昌县': { first: 16, perKg: 6 },
+    '文昌': { first: 16, perKg: 6 },
+    '昌江黎族自治县': { first: 16, perKg: 6 },
+    '海口': { first: 16, perKg: 6 },
+    '澄迈县': { first: 16, perKg: 6 },
+    '琼中黎族苗族自治县': { first: 16, perKg: 6 },
+    '琼海': { first: 16, perKg: 6 },
+    '白沙黎族自治县': { first: 16, perKg: 6 },
+    '陵水黎族自治县': { first: 16, perKg: 6 },
+  },
+  '湖北': {
+    '仙桃': { first: 16, perKg: 6 },
+    '十堰': { first: 15, perKg: 5 },
+    '咸宁': { first: 16, perKg: 6 },
+    '天门': { first: 16, perKg: 6 },
+    '孝感': { first: 16, perKg: 6 },
+    '宜昌': { first: 15, perKg: 5 },
+    '恩施土家族苗族自治州': { first: 15, perKg: 5 },
+    '武汉': { first: 16, perKg: 6 },
+    '潜江': { first: 16, perKg: 6 },
+    '神农架林区': { first: 15, perKg: 5 },
+    '荆州': { first: 15, perKg: 5 },
+    '荆门': { first: 15, perKg: 5 },
+    '襄阳': { first: 16, perKg: 6 },
+    '鄂州': { first: 16, perKg: 6 },
+    '随州': { first: 16, perKg: 6 },
+    '黄冈': { first: 16, perKg: 6 },
+    '黄石': { first: 16, perKg: 6 },
+  },
+  '湖南': {
+    '娄底': { first: 16, perKg: 6 },
+    '岳阳': { first: 16, perKg: 6 },
+    '常德': { first: 16, perKg: 6 },
+    '张家界': { first: 15, perKg: 5 },
+    '怀化': { first: 15, perKg: 5 },
+    '株洲': { first: 16, perKg: 6 },
+    '永州': { first: 16, perKg: 6 },
+    '湘潭': { first: 16, perKg: 6 },
+    '湘西土家族苗族自治州': { first: 15, perKg: 5 },
+    '益阳': { first: 16, perKg: 6 },
+    '衡阳': { first: 16, perKg: 6 },
+    '邵阳': { first: 16, perKg: 6 },
+    '郴州': { first: 16, perKg: 6 },
+    '长沙': { first: 16, perKg: 6 },
+  },
+  '甘肃': {
+    '临夏回族自治州': { first: 15, perKg: 5 },
+    '兰州': { first: 15, perKg: 5 },
+    '嘉峪关': { first: 16, perKg: 6 },
+    '天水': { first: 15, perKg: 5 },
+    '定西': { first: 15, perKg: 5 },
+    '平凉': { first: 16, perKg: 6 },
+    '庆阳': { first: 16, perKg: 6 },
+    '张掖': { first: 16, perKg: 6 },
+    '武威': { first: 16, perKg: 6 },
+    '甘南藏族自治州': { first: 15, perKg: 5 },
+    '白银': { first: 15, perKg: 5 },
+    '酒泉': { first: 16, perKg: 6 },
+    '金昌': { first: 16, perKg: 6 },
+    '陇南': { first: 15, perKg: 5 },
+  },
+  '福建': {
+    '三明': { first: 16, perKg: 6 },
+    '南平': { first: 16, perKg: 6 },
+    '厦门': { first: 17, perKg: 6 },
+    '宁德': { first: 17, perKg: 6 },
+    '泉州': { first: 17, perKg: 6 },
+    '漳州': { first: 17, perKg: 6 },
+    '福州': { first: 17, perKg: 6 },
+    '莆田': { first: 17, perKg: 6 },
+    '龙岩': { first: 16, perKg: 6 },
+  },
+  '西藏': {
+    '山南市': { first: 20, perKg: 10 },
+    '拉萨': { first: 20, perKg: 10 },
+    '日喀则市': { first: 20, perKg: 10 },
+    '昌都市': { first: 21, perKg: 14 },
+    '林芝': { first: 20, perKg: 10 },
+    '那曲市': { first: 20, perKg: 10 },
+    '阿里地区': { first: 26, perKg: 18.5 },
+  },
+  '贵州': {
+    '六盘水': { first: 15, perKg: 5 },
+    '安顺': { first: 15, perKg: 5 },
+    '毕节': { first: 15, perKg: 5 },
+    '贵阳': { first: 15, perKg: 5 },
+    '遵义': { first: 15, perKg: 5 },
+    '铜仁': { first: 15, perKg: 5 },
+    '黔东南苗族侗族自治州': { first: 15, perKg: 5 },
+    '黔南布依族苗族自治州': { first: 15, perKg: 5 },
+    '黔西南布依族苗族自治州': { first: 15, perKg: 5 },
+  },
+  '辽宁': {
+    '丹东': { first: 17, perKg: 6 },
+    '大连': { first: 17, perKg: 6 },
+    '抚顺': { first: 17, perKg: 6 },
+    '朝阳': { first: 17, perKg: 6 },
+    '本溪': { first: 17, perKg: 6 },
+    '沈阳': { first: 17, perKg: 6 },
+    '盘锦': { first: 17, perKg: 6 },
+    '营口': { first: 17, perKg: 6 },
+    '葫芦岛': { first: 17, perKg: 6 },
+    '辽阳': { first: 17, perKg: 6 },
+    '铁岭': { first: 17, perKg: 6 },
+    '锦州': { first: 17, perKg: 6 },
+    '阜新': { first: 17, perKg: 6 },
+    '鞍山': { first: 17, perKg: 6 },
+  },
+  '重庆': {
+    '重庆': { first: 13, perKg: 2 },
+  },
+  '陕西': {
+    '咸阳': { first: 15, perKg: 5 },
+    '商洛': { first: 15, perKg: 5 },
+    '安康': { first: 15, perKg: 5 },
+    '宝鸡': { first: 15, perKg: 5 },
+    '延安': { first: 16, perKg: 6 },
+    '榆林': { first: 16, perKg: 6 },
+    '汉中': { first: 15, perKg: 5 },
+    '渭南': { first: 15, perKg: 5 },
+    '西安': { first: 15, perKg: 5 },
+    '铜川': { first: 15, perKg: 5 },
+  },
+  '青海': {
+    '果洛藏族自治州': { first: 16, perKg: 6 },
+    '海东市': { first: 16, perKg: 6 },
+    '海北藏族自治州': { first: 16, perKg: 6 },
+    '海南藏族自治州': { first: 16, perKg: 6 },
+    '海西蒙古族藏族自治州': { first: 16, perKg: 6 },
+    '玉树藏族自治州': { first: 19, perKg: 9.5 },
+    '西宁': { first: 16, perKg: 6 },
+    '黄南藏族自治州': { first: 16, perKg: 6 },
+  },
+  '黑龙江': {
+    '七台河': { first: 18, perKg: 8 },
+    '伊春': { first: 18, perKg: 8 },
+    '佳木斯': { first: 18, perKg: 8 },
+    '双鸭山': { first: 18, perKg: 8 },
+    '哈尔滨': { first: 18, perKg: 8 },
+    '大兴安岭地区': { first: 18, perKg: 8 },
+    '大庆': { first: 18, perKg: 8 },
+    '牡丹江': { first: 18, perKg: 8 },
+    '绥化': { first: 18, perKg: 8 },
+    '鸡西': { first: 18, perKg: 8 },
+    '鹤岗': { first: 18, perKg: 8 },
+    '黑河': { first: 18, perKg: 8 },
+    '齐齐哈尔': { first: 18, perKg: 8 },
+  },
+        };
+
+        const ZT = {
+  '上海': { type: 'tiered', tiers: [3.15, 3.6, 4.2, 4.7, 6.4, 6.9], first5: 5.0, perKg5: 1.88 },
+  '云南省': { type: 'tiered', tiers: [2.32, 2.9, 3.6, 4.4, 6.3, 7.2], first5: 5.0, perKg5: 2.1 },
+  '内蒙古': { type: 'fixed', first: 10, perKg: 5.7 },
+  '北京': { type: 'tiered', tiers: [3.4, 3.73, 4.56, 5.37, 7.82, 9.73], first5: 5.5, perKg5: 2.95 },
+  '吉林省': { type: 'tiered', tiers: [2.45, 3.1, 4.4, 5.4, 8.2, 11.3], first5: 6.5, perKg5: 3.85 },
+  '四川省': { type: 'tiered', tiers: [2.15, 2.7, 3.3, 3.8, 5.9, 6.5], first5: 5.0, perKg5: 1.18 },
+  '天津': { type: 'tiered', tiers: [2.2, 2.75, 3.35, 3.85, 5.95, 6.2], first5: 5.0, perKg5: 1.95 },
+  '宁夏回族自治区': { type: 'tiered', tiers: [2.7, 3.4, 4.5, 5.6, 8.0, 9.8], first5: 6.5, perKg5: 3.7 },
+  '安徽省': { type: 'tiered', tiers: [2.2, 2.75, 3.35, 3.85, 5.95, 6.2], first5: 5.0, perKg5: 1.95 },
+  '山东省': { type: 'tiered', tiers: [2.2, 2.75, 3.35, 3.85, 5.95, 6.2], first5: 5.0, perKg5: 1.95 },
+  '山西省': { type: 'tiered', tiers: [2.32, 2.9, 3.6, 4.4, 6.3, 7.2], first5: 5.0, perKg5: 2.05 },
+  '广东省': { type: 'tiered', tiers: [2.2, 2.75, 3.35, 3.85, 5.95, 6.2], first5: 5.0, perKg5: 1.95 },
+  '广西壮族自治区': { type: 'tiered', tiers: [2.32, 2.9, 3.6, 4.4, 6.3, 7.2], first5: 5.0, perKg5: 1.9 },
+  '新疆': { type: 'fixed', first: 10, perKg: 7.5 },
+  '江苏省': { type: 'tiered', tiers: [2.2, 2.75, 3.35, 3.85, 5.95, 6.2], first5: 5.0, perKg5: 1.95 },
+  '江西省': { type: 'tiered', tiers: [2.2, 2.75, 3.35, 3.85, 5.95, 6.2], first5: 5.0, perKg5: 1.95 },
+  '河北省': { type: 'tiered', tiers: [2.2, 2.75, 3.35, 3.85, 5.95, 6.2], first5: 5.0, perKg5: 1.95 },
+  '河南省': { type: 'tiered', tiers: [2.2, 2.75, 3.35, 3.85, 5.95, 6.2], first5: 5.0, perKg5: 1.95 },
+  '浙江省': { type: 'tiered', tiers: [2.2, 2.75, 3.35, 3.85, 5.95, 6.2], first5: 5.0, perKg5: 1.95 },
+  '海南': { type: 'fixed', first: 8, perKg: 5.7 },
+  '湖北省': { type: 'tiered', tiers: [2.2, 2.75, 3.35, 3.85, 5.95, 6.2], first5: 5.0, perKg5: 1.95 },
+  '湖南省': { type: 'tiered', tiers: [2.2, 2.75, 3.35, 3.85, 5.95, 6.2], first5: 5.0, perKg5: 1.95 },
+  '甘孜阿坝': { type: 'fixed', first: 8, perKg: 4.7 },
+  '甘肃省': { type: 'tiered', tiers: [2.7, 3.4, 4.5, 5.6, 8.0, 9.8], first5: 6.5, perKg5: 3.7 },
+  '福建省': { type: 'tiered', tiers: [2.2, 2.75, 3.35, 3.85, 5.95, 6.2], first5: 5.0, perKg5: 1.95 },
+  '西藏': { type: 'fixed', first: 10, perKg: 7.5 },
+  '贵州省': { type: 'tiered', tiers: [2.32, 2.9, 3.6, 4.4, 6.3, 7.2], first5: 5.0, perKg5: 2.0 },
+  '辽宁省': { type: 'tiered', tiers: [2.45, 3.1, 4.4, 5.4, 8.2, 11.3], first5: 6.5, perKg5: 3.7 },
+  '重庆': { type: 'tiered', tiers: [2.15, 2.7, 3.3, 3.8, 5.7, 6.0], first5: 5.0, perKg5: 1.5 },
+  '陕西省': { type: 'tiered', tiers: [2.32, 2.9, 3.6, 4.4, 6.3, 7.2], first5: 5.0, perKg5: 2.05 },
+  '青海省': { type: 'tiered', tiers: [2.7, 3.4, 4.5, 5.6, 8.0, 9.8], first5: 6.5, perKg5: 3.85 },
+  '黑龙江省': { type: 'tiered', tiers: [2.45, 3.1, 4.4, 5.4, 8.2, 11.3], first5: 6.5, perKg5: 3.85 }
+};
+
+        const SXJD = {
+  '四川':        { min: 35, t1: 0.9, t2: 0.8, t3: 0.8, t4: 0.7 },
+  '甘孜阿坝凉山': { min: 35, t1: 1.5, t2: 1.4, t3: 1.3, t4: 1.0 },
+  '重庆':        { min: 35, t1: 1.0, t2: 0.9, t3: 0.8, t4: 0.7 },
+  '河北':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '山西':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '上海':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '江苏':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '浙江':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '安徽':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '江西':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '天津':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '山东':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '河南':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '湖北':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '湖南':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '广东':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '贵州':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '陕西':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '福建':        { min: 40, t1: 1.5, t2: 1.4, t3: 1.3, t4: 0.9 },
+  '广西':        { min: 40, t1: 1.5, t2: 1.4, t3: 1.2, t4: 0.9 },
+  '云南':        { min: 40, t1: 1.4, t2: 1.3, t3: 1.2, t4: 0.9 },
+  '北京':        { min: 45, t1: 1.7, t2: 1.6, t3: 1.5, t4: 1.4 },
+  '甘肃':        { min: 45, t1: 1.8, t2: 1.6, t3: 1.5, t4: 1.4 },
+  '辽宁':        { min: 45, t1: 2.3, t2: 2.2, t3: 2.0, t4: 1.8 },
+  '吉林':        { min: 45, t1: 2.3, t2: 2.2, t3: 2.0, t4: 1.8 },
+  '黑龙江':      { min: 45, t1: 2.5, t2: 2.4, t3: 2.2, t4: 2.0 },
+  '内蒙古':      { min: 55, t1: 2.5, t2: 2.4, t3: 2.3, t4: 2.1 },
+  '青海':        { min: 55, t1: 2.8, t2: 2.7, t3: 2.6, t4: 2.4 },
+  '宁夏':        { min: 65, t1: 2.6, t2: 2.4, t3: 2.2, t4: 2.0 },
+  '西藏':        { min: 65, t1: 4.0, t2: 3.5, t3: 3.0, t4: 2.8 },
+  '新疆':        { min: 65, t1: 4.0, t2: 3.5, t3: 3.0, t4: 2.8 }
+};
+
+        var company = 'jd';
+
+        function setCompany(c) {
+            company = c;
+            document.getElementById('btn-jd').className = 'company-btn' + (c==='jd'?' active':'');
+            document.getElementById('btn-zt').className = 'company-btn' + (c==='zt'?' active':'');
+            document.getElementById('btn-sxjd').className = 'company-btn' + (c==='sxjd'?' active':'');
+            document.getElementById('card-jd').style.display = c==='jd'?'block':'none';
+            document.getElementById('card-zt').style.display = c==='zt'?'block':'none';
+            document.getElementById('card-sxjd').style.display = c==='sxjd'?'block':'none';
+            document.getElementById('discountCard').style.display = c==='jd'?'block':'none';
+            var sxjdWrap = document.querySelector('#card-sxjd .city-select-wrap');
+            if (sxjdWrap) sxjdWrap.classList.toggle('active', c==='sxjd');
+            showResult(false);
+        }
+
+        function onJdProvChange() {
+            var prov = document.getElementById('jdProv').value;
+            var wraps = document.getElementsByClassName('city-select-wrap');
+            for (var i = 0; i < wraps.length; i++) wraps[i].classList.remove('active');
+            if (prov) {
+                var wrap = document.getElementById('cityWrap-' + prov);
+                if (wrap) wrap.classList.add('active');
+            }
+            calc();
+        }
+
+        function calc() {
+            var w = parseFloat(document.getElementById('weight').value);
+            if (!w || w <= 0) { showResult(false); return; }
+            var bill = Math.ceil(w);
+            var discount = parseFloat(document.getElementById('discount').value);
+            var discountText = discount === 10 ? '原价' : discount + '折';
+            var total, dest, name;
+
+            if (company === 'jd') {
+                var prov = document.getElementById('jdProv').value;
+                var cityEl = prov ? document.getElementById('jdCity-' + prov) : null;
+                var city = cityEl ? cityEl.value : '';
+                if (!prov || !city) { showResult(false); return; }
+                var price = JD[prov] ? JD[prov][city] : null;
+                if (!price) { showResult(false); return; }
+                total = price.first;
+                if (bill > 1) total += (bill - 1) * price.perKg;
+                dest = prov + ' ' + city; name = '京东快递';
+            } else if (company === 'zt') {
+                var prov = document.getElementById('ztProv').value;
+                if (!prov) { showResult(false); return; }
+                var ztData = ZT[prov];
+                if (!ztData) { showResult(false); return; }
+                if (ztData.type === 'fixed') {
+                    // 特殊地区：首重(含1kg) + 续重×不足1kg向上取整
+                    var extraKg = Math.ceil(w) - 1;
+                    if (extraKg < 0) extraKg = 0;
+                    total = ztData.first + extraKg * ztData.perKg;
+                } else {
+                    // 普通地区：按重量段
+                    if (w <= 5) {
+                        // tiers索引映射: ≤0.5→0, >0.5≤1→1, >1≤2→2, >2≤3→3, >3≤4→4, >4≤5→5
+                        var idx;
+                        if (w <= 0.5) idx = 0;
+                        else if (w <= 1) idx = 1;
+                        else if (w <= 2) idx = 2;
+                        else if (w <= 3) idx = 3;
+                        else if (w <= 4) idx = 4;
+                        else idx = 5;
+                        total = ztData.tiers[idx];
+                    } else {
+                        // 5kg以上: 首重(5kg首重列) + ceil(实际重量-1)×续重单价
+                        total = ztData.first5 + Math.ceil(w - 1) * ztData.perKg5;
+                    }
+                }
+                dest = prov; name = '中通快递';
+            } else {
+                // 顺心捷达快运
+                var prov = document.getElementById('sxjdProv').value;
+                if (!prov) { showResult(false); return; }
+                var sxjdData = SXJD[prov];
+                if (!sxjdData) { showResult(false); return; }
+                // 按重量段选择单价
+                var perKg;
+                if (w <= 200) perKg = sxjdData.t1;
+                else if (w <= 500) perKg = sxjdData.t2;
+                else if (w <= 1000) perKg = sxjdData.t3;
+                else perKg = sxjdData.t4;
+                total = Math.max(sxjdData.min, w * perKg);
+                dest = prov; name = '顺心捷达快运';
+            }
+
+            // 京东应用折扣，中通不打折
+            if (company === 'jd') {
+                total = total * discount / 10;
+            }
+            total = Math.round(total * 100) / 100;
+
+            document.getElementById('totalPrice').innerHTML = '¥' + total.toFixed(2) + '<small>元</small>';
+            document.getElementById('rCompany').textContent = name;
+            document.getElementById('rDest').textContent = dest;
+            document.getElementById('rWeight').textContent = w.toFixed(2) + 'kg';
+            document.getElementById('rBill').textContent = bill + 'kg';
+            document.getElementById('rDiscount').textContent = company === 'jd' ? discountText : '无折扣';
+            buildCalcDetail(company, w, bill, discount, price, ztData, sxjdData, perKg, total, dest);
+            showResult(true);
+        }
+
+        function buildCalcDetail(company, w, bill, discount, price, ztData, sxjdData, perKg, total, dest) {
+            var detailDiv = document.getElementById('calcDetail');
+            var formulaDiv = document.getElementById('calcFormula');
+            var noteDiv = document.getElementById('calcNote');
+            if (!detailDiv || !formulaDiv) return;
+
+            var html = '';
+            var note = '';
+
+            if (company === 'jd') {
+                var rawFirst = price.first;
+                var rawPerKg = price.perKg;
+                var extraKg = bill - 1;
+                var rawTotal = price.first + extraKg * price.perKg;
+                html = '首重1kg费用：' + rawFirst.toFixed(2) + '元\n';
+                if (extraKg > 0) {
+                    html += '续重' + bill + 'kg：' + extraKg + 'kg × ' + rawPerKg.toFixed(2) + '元 = ' + (extraKg * rawPerKg).toFixed(2) + '元\n';
+                }
+                html += '原价合计：' + rawTotal.toFixed(2) + '元 × ' + (discount/10) + '折 = ' + total.toFixed(2) + '元';
+                note = '公式：首重费 + 续重费 × 折扣';
+            } else if (company === 'zt') {
+                if (ztData.type === 'fixed') {
+                    var extraKg = Math.ceil(w) - 1;
+                    html = '首重1kg：' + ztData.first.toFixed(2) + '元\n';
+                    if (extraKg > 0) {
+                        html += '续重' + extraKg + 'kg：' + extraKg + ' × ' + ztData.perKg.toFixed(2) + '元 = ' + (extraKg * ztData.perKg).toFixed(2) + '元\n';
+                    }
+                    html += '合计：' + total.toFixed(2) + '元';
+                    note = '公式：首重1kg + ceil(kg-1) × 续重单价';
+                } else {
+                    if (w <= 5) {
+                        var idx;
+                        if (w <= 0.5) idx = 0;
+                        else if (w <= 1) idx = 1;
+                        else if (w <= 2) idx = 2;
+                        else if (w <= 3) idx = 3;
+                        else if (w <= 4) idx = 4;
+                        else idx = 5;
+                        var wtLabel = ['≤0.5kg','0.5~1kg','1~2kg','2~3kg','3~4kg','4~5kg'][idx];
+                        html = '重量' + w.toFixed(2) + 'kg → ' + wtLabel + '区间\n';
+                        html += '费用：' + ztData.tiers[idx].toFixed(2) + '元\n';
+                        html += '合计：' + total.toFixed(2) + '元';
+                        note = '公式：按重量段查表（≤5kg）';
+                    } else {
+                        html = '重量' + w.toFixed(2) + 'kg → >5kg计费\n';
+                        html += '首重5kg：' + ztData.first5.toFixed(2) + '元\n';
+                        var extraKg = Math.ceil(w - 1);
+                        html += '续重：ceil(' + w.toFixed(2) + '-1) × ' + ztData.perKg5.toFixed(2) + ' = ' + extraKg + ' × ' + ztData.perKg5.toFixed(2) + ' = ' + (extraKg * ztData.perKg5).toFixed(2) + '元\n';
+                        html += '合计：' + total.toFixed(2) + '元';
+                        note = '公式：首重5kg列 + ceil(kg-1) × 续重单价';
+                    }
+                }
+            } else {
+                // 顺心捷达
+                var segKey = w <= 200 ? 't1' : w <= 500 ? 't2' : w <= 1000 ? 't3' : 't4';
+                var seg = w <= 200 ? '≤200kg' : w <= 500 ? '201~500kg' : w <= 1000 ? '501~1000kg' : '>1000kg';
+                var pk = sxjdData[segKey];
+                var raw = w * pk;
+                html = '重量' + w.toFixed(2) + 'kg → ' + seg + '区间\n';
+                html += '单价：' + pk.toFixed(2) + '元/kg\n';
+                html += '费用：' + w.toFixed(2) + ' × ' + pk.toFixed(2) + ' = ' + raw.toFixed(2) + '元\n';
+                html += '最低收费：' + sxjdData.min + '元\n';
+                html += '取最大值：max(' + sxjdData.min + ', ' + raw.toFixed(2) + ') = ' + total.toFixed(2) + '元';
+                note = '公式：max(最低收费, 重量 × 区间单价)';
+            }
+
+            formulaDiv.innerHTML = html.replace(/\n/g, '<br>');
+            noteDiv.textContent = note;
+            detailDiv.style.display = 'block';
+        }
+
+        function showResult(show) {
+            document.getElementById('resultCard').style.display = show ? 'block' : 'none';
+        }
+
+        document.getElementById('weight').addEventListener('input', calc);
+    </script>
+</body>
+</html>
