@@ -1311,7 +1311,7 @@
                 var city = cityEl ? cityEl.value : '';
                 if (!prov || !city) { showResult(false); return; }
                 var price = JD[prov] ? JD[prov][city] : null;
-                if (!price) { showResult(false), return; }
+                if (!price) { showResult(false); return; }
                 if (bill <= 30) {
                     total = price.first + (bill - 1) * price.perKg;
                 } else {
