@@ -1311,9 +1311,14 @@
                 var city = cityEl ? cityEl.value : '';
                 if (!prov || !city) { showResult(false); return; }
                 var price = JD[prov] ? JD[prov][city] : null;
-                if (!price) { showResult(false); return; }
-                total = price.first;
-                if (bill > 1) total += (bill - 1) * price.perKg;
+                if (!price) { showResult(false), return; }
+                if (bill <= 30) {
+                    total = price.first + (bill - 1) * price.perKg;
+                } else {
+                    // 30kg以内：首重 + (bill-1)×续重
+                    // 超过30kg：前29kg续重 + 第30kg起每公斤额外+1元
+                    total = price.first + 29 * price.perKg + (bill - 30) * (price.perKg + 1);
+                }
                 dest = prov + ' ' + city; name = '京东快递';
             } else if (company === 'zt') {
                 var prov = document.getElementById('ztProv').value;
@@ -1387,14 +1392,30 @@
             if (company === 'jd') {
                 var rawFirst = price.first;
                 var rawPerKg = price.perKg;
-                var extraKg = bill - 1;
-                var rawTotal = price.first + extraKg * price.perKg;
-                html = '首重1kg费用：' + rawFirst.toFixed(2) + '元\n';
-                if (extraKg > 0) {
-                    html += '续重' + bill + 'kg：' + extraKg + 'kg × ' + rawPerKg.toFixed(2) + '元 = ' + (extraKg * rawPerKg).toFixed(2) + '元\n';
+                var html = '';
+                var note = '';
+                if (bill <= 30) {
+                    var extraKg = bill - 1;
+                    var rawTotal = price.first + extraKg * price.perKg;
+                    html = '首重1kg费用：' + rawFirst.toFixed(2) + '元\n';
+                    if (extraKg > 0) {
+                        html += '续重' + bill + 'kg：' + extraKg + 'kg × ' + rawPerKg.toFixed(2) + '元 = ' + (extraKg * rawPerKg).toFixed(2) + '元\n';
+                    }
+                    html += '原价合计：' + rawTotal.toFixed(2) + '元 × ' + (discount/10) + '折 = ' + total.toFixed(2) + '元';
+                    note = '公式：首重费 + 续重费 × 折扣';
+                } else {
+                    // 30kg以上：超过30kg后每公斤续重增加1元
+                    var extraKg29 = 29;
+                    var over30Kg = bill - 30;
+                    var rawTotal = price.first + 29 * price.perKg + over30Kg * (price.perKg + 1);
+                    html = '首重1kg费用：' + rawFirst.toFixed(2) + '元\n';
+                    html += '续重(≤30kg)：' + extraKg29 + 'kg × ' + rawPerKg.toFixed(2) + '元 = ' + (extraKg29 * rawPerKg).toFixed(2) + '元\n';
+                    if (over30Kg > 0) {
+                        html += '续重(>30kg)：' + over30Kg + 'kg × ' + (price.perKg + 1).toFixed(2) + '元 = ' + (over30Kg * (price.perKg + 1)).toFixed(2) + '元\n';
+                    }
+                    html += '原价合计：' + rawTotal.toFixed(2) + '元 × ' + (discount/10) + '折 = ' + total.toFixed(2) + '元';
+                    note = '公式：首重费+续重(≤30kg)费+续重(>30kg)费×折扣\n30kg以上每公斤续重增加1元';
                 }
-                html += '原价合计：' + rawTotal.toFixed(2) + '元 × ' + (discount/10) + '折 = ' + total.toFixed(2) + '元';
-                note = '公式：首重费 + 续重费 × 折扣';
             } else if (company === 'zt') {
                 if (ztData.type === 'fixed') {
                     var extraKg = Math.ceil(w) - 1;
